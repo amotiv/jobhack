@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: jobhack
+      POSTGRES_PASSWORD: jobhack
+      POSTGRES_DB: jobhack
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports: ["5432:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobhack -d jobhack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+  worker:
+    image: python:3.11-slim
+    working_dir: /app/backend
+    volumes: ["./backend:/app/backend"]
+    depends_on: [db, redis]
+    environment:
+      - CELERY_BROKER=redis
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=api.settings
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=db
+      - DB_NAME=jobhack
+      - DB_USER=jobhack
+      - DB_PASSWORD=jobhack
+      - DB_PORT=5432
+    command: bash -lc "pip install -r requirements.txt && python manage.py migrate && celery -A api worker -l info"
+
+  beat:
+    image: python:3.11-slim
+    working_dir: /app/backend
+    volumes: ["./backend:/app/backend"]
+    depends_on: [worker]
+    environment:
+      - CELERY_BROKER=redis
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=api.settings
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=db
+      - DB_NAME=jobhack
+      - DB_USER=jobhack
+      - DB_PASSWORD=jobhack
+      - DB_PORT=5432
+    command: bash -lc "pip install -r requirements.txt && python manage.py migrate && celery -A api beat -l info"
+volumes:
+  dbdata:

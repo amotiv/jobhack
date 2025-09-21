@@ -1,0 +1,15 @@
+django
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+django-storages
+boto3
+psycopg[binary]
+python-dotenv
+PyPDF2
+python-docx
+celery
+kombu[sqs]
+redis
+stripe
+gunicorn
