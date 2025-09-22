@@ -13,4 +13,5 @@ kombu[sqs]
 redis
 stripe
 gunicorn
+dj-database-url==2.1.0
 
