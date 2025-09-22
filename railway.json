@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd backend && export DJANGO_SETTINGS_MODULE=api.settings_railway && python -c \"import os; print('DATABASE_URL present:', bool(os.getenv('DATABASE_URL')))\" && python manage.py migrate && python manage.py seed_jobs && gunicorn --bind 0.0.0.0:$PORT --timeout 120 --workers 1 api.wsgi:application",
+    "startCommand": "cd backend && export DJANGO_SETTINGS_MODULE=api.settings_railway && python - <<'PY'\nimport os, dj_database_url\nu=os.getenv(\"DATABASE_URL\"); print(\"DATABASE_URL present:\", bool(u))\nif u:\n    cfg=dj_database_url.parse(u); print(\"DB HOST:\", cfg.get(\"HOST\"))\nPY\npython manage.py migrate && python manage.py seed_jobs && gunicorn --bind 0.0.0.0:$PORT --timeout 120 --workers 1 api.wsgi:application",
     "healthcheckPath": "/api/health/",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

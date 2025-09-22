@@ -7,25 +7,12 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Fail fast if DATABASE_URL is missing
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is not set. On Railway, add/link a PostgreSQL service "
-        "and ensure the Django service inherits DATABASE_URL."
-    )
-
-# Force SSL and long-lived connections for Railway (psycopg3 compatible)
-DATABASES = {
-    "default": dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=600,
-        ssl_require=True,  # implies options like sslmode=require
-    )
-}
-
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
 DEBUG = os.getenv("DEBUG", "0") == "1"
+
+# Fail fast if SECRET_KEY is default in production
+if not DEBUG and SECRET_KEY == "dev-secret":
+    raise RuntimeError("SECRET_KEY must be set in production.")
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
@@ -58,7 +45,7 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "api.wsgi.application"
 
-# Database configuration is set at the top of this file
+# Database configuration is set at the bottom of this file
 
 AUTH_USER_MODEL = "core.User"
 
@@ -75,6 +62,9 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# CSRF trusted origins for Railway deployment
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
 
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
@@ -95,21 +85,18 @@ if AWS_S3_BUCKET:
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-# Celery Configuration
-CELERY_BROKER = os.getenv("CELERY_BROKER", "redis")
-if CELERY_BROKER == "sqs":
-    CELERY_BROKER_URL = "sqs://"
-    CELERY_BROKER_TRANSPORT_OPTIONS = {
-        "region": os.getenv("AWS_REGION", "us-east-1"),
-        "visibility_timeout": 3600,
-        "polling_interval": 1,
-        "queue_name_prefix": os.getenv("SQS_PREFIX", "jobhack-"),
-    }
-else:
-    CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# Celery Configuration - Safe defaults for Railway
+USE_REDIS = bool(os.getenv("REDIS_URL"))
 
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_EAGER", "0") == "1"
+if USE_REDIS:
+    CELERY_BROKER_URL = os.getenv("REDIS_URL")
+    CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
+    CELERY_TASK_ALWAYS_EAGER = False
+else:
+    # Safe defaults for web dyno without Redis
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"
+    CELERY_TASK_ALWAYS_EAGER = True
 
 # Stripe Configuration
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
@@ -119,3 +106,22 @@ FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
 
 # Optional: premium visibility toggle
 SHOW_MATCH_TO_FREE = os.getenv("SHOW_MATCH_TO_FREE", "0") == "1"
+
+# ------------------------------
+# FINAL, NON-OVERRIDABLE DB SETUP
+# ------------------------------
+import os
+import dj_database_url
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. On Railway, link the Postgres service so the "
+        "Django service inherits it."
+    )
+
+DATABASES = {
+    "default": dj_database_url.parse(
+        DATABASE_URL, conn_max_age=600, ssl_require=True
+    )
+}
