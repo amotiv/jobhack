@@ -1,6 +1,7 @@
-web: cd backend && export DJANGO_SETTINGS_MODULE=api.settings_railway && python - <<'PY'
+web: cd backend && python - <<'PY'
 import os, dj_database_url
 u=os.getenv("DATABASE_URL"); print("DATABASE_URL present:", bool(u))
+print("DJANGO_SETTINGS_MODULE:", os.getenv("DJANGO_SETTINGS_MODULE"))
 if u:
     cfg=dj_database_url.parse(u); print("DB HOST:", cfg.get("HOST"))
 PY
