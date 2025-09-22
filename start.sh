@@ -64,3 +64,4 @@ echo "📝 To stop the application: docker-compose down"
 echo "📋 To view logs: docker-compose logs -f"
 
 
+

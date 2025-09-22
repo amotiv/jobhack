@@ -49,7 +49,7 @@ def _apply_visibility_gate(request, item_or_dict):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def health(_):
-    return Response({"ok": True})
+    return Response({"ok": True, "status": "healthy"})
 
 @api_view(["POST"])
 @permission_classes([AllowAny])

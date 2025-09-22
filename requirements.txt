@@ -13,3 +13,4 @@ kombu[sqs]
 redis
 stripe
 gunicorn
+
