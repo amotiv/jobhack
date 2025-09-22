@@ -4,7 +4,7 @@ djangorestframework-simplejwt
 django-cors-headers
 django-storages
 boto3
-psycopg[binary]
+psycopg[binary]==3.*
 python-dotenv
 PyPDF2
 python-docx
@@ -13,5 +13,5 @@ kombu[sqs]
 redis
 stripe
 gunicorn
-dj-database-url==2.1.0
+dj-database-url==2.*
 

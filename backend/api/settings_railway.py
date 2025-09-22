@@ -6,6 +6,24 @@ import dj_database_url
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Fail fast if DATABASE_URL is missing
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. On Railway, add/link a PostgreSQL service "
+        "and ensure the Django service inherits DATABASE_URL."
+    )
+
+# Force SSL and long-lived connections for Railway (psycopg3 compatible)
+DATABASES = {
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True,  # implies options like sslmode=require
+    )
+}
+
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
 DEBUG = os.getenv("DEBUG", "0") == "1"
 ALLOWED_HOSTS = ["*"]
@@ -40,27 +58,7 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "api.wsgi.application"
 
-# Railway PostgreSQL Database
-# Railway provides DATABASE_URL automatically
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL:
-    # Use dj_database_url for robust parsing of Railway's DATABASE_URL
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
-    }
-else:
-    # Fallback to individual environment variables if DATABASE_URL is not set
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "railway"),
-            "USER": os.getenv("DB_USER", "postgres"),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "5432"),
-        }
-    }
+# Database configuration is set at the top of this file
 
 AUTH_USER_MODEL = "core.User"
 
