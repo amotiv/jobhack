@@ -6,12 +6,12 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    # Prefer env override, else auto-pick Railway settings if on Railway
+    # Prefer env override, else auto-pick Render settings if on Render
     os.environ.setdefault(
         "DJANGO_SETTINGS_MODULE",
         os.getenv(
             "DJANGO_SETTINGS_MODULE",
-            "api.settings_railway" if os.getenv("RAILWAY_ENVIRONMENT") else "api.settings"
+            "api.settings_railway" if os.getenv("RENDER") else "api.settings"
         ),
     )
     try:
